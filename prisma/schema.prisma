@@ -1,0 +1,143 @@
+// Prisma schema for Dharmalayam
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String    @id @default(uuid())
+  phone             String?   @unique
+  email             String?   @unique
+  username          String?   @unique
+  passwordHash      String?
+  preferredLanguage String    @default("en")
+  isNewUser         Boolean   @default(true)
+  role              UserRole  @default(user)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  profiles          Profile[]
+  subscriptions     Subscription[]
+  payments          Payment[]
+}
+
+enum UserRole {
+  user
+  admin
+  support
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  relationship String
+  dob         DateTime
+  tob         DateTime
+  placeName   String
+  placeLat    Float
+  placeLng    Float
+  isLocked    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  horoscope   HoroscopeDaily[]
+}
+
+model Plan {
+  id                 String  @id @default(uuid())
+  name               String
+  monthlyPriceCents  Int
+  yearlyPriceCents   Int
+  maxProfiles        Int
+  features           Json
+  subscriptions      Subscription[]
+}
+
+model Subscription {
+  id              String   @id @default(uuid())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String
+  plan            Plan     @relation(fields: [planId], references: [id])
+  planId          String
+  status          SubscriptionStatus
+  period          BillingPeriod
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  razorpaySubscriptionId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  payments        Payment[]
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  expired
+}
+
+enum BillingPeriod {
+  monthly
+  yearly
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId  String
+  razorpayPaymentId String
+  amountCents     Int
+  currency        String
+  status          PaymentStatus
+  rawWebhook      Json
+  createdAt       DateTime @default(now())
+}
+
+enum PaymentStatus {
+  success
+  failed
+  refunded
+}
+
+model FAQCategory {
+  id        String   @id @default(uuid())
+  sortOrder Int
+  key       String
+  questions FAQQuestion[]
+}
+
+model FAQQuestion {
+  id          String   @id @default(uuid())
+  category    FAQCategory @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  questionKey String
+  sortOrder   Int
+  translations FAQTranslation[]
+}
+
+model FAQTranslation {
+  id          String   @id @default(uuid())
+  question    FAQQuestion @relation(fields: [questionId], references: [id])
+  questionId  String
+  langCode    String
+  questionText String
+  answerText  String
+}
+
+model HoroscopeDaily {
+  id        String   @id @default(uuid())
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  profileId String
+  date      DateTime
+  rashi     String
+  contentEn String
+  contentHi String
+  contentTa String
+  contentTe String
+  createdAt DateTime @default(now())
+}
