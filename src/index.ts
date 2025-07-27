@@ -1,11 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import userRoutes from './routes/users';
 import planRoutes from './routes/plans';
 
 const app = express();
 app.use(express.json());
 
-app.get('/', (req: any, res: any) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('Dharmalayam API');
 });
 
